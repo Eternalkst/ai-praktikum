@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ИИ-практикум Костанай</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Manrope:wght@400;600;800&display=swap">
+<style>
+  :root {
+    --bg: #0A1428;
+    --card: #12224A;
+    --line: #24407A;
+    --text: #EEF3FB;
+    --muted: #A9BEDD;
+    --accent: #4DA3FF;
+    --accent-strong: #1656D6;
+    --on-accent: #F4F7FC;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); }
+  body { font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
+
+  .feed { height: 100dvh; overflow-y: auto; scroll-snap-type: y proximity; overscroll-behavior: contain; }
+  .slide {
+    min-height: 100dvh; scroll-snap-align: start;
+    padding: calc(28px + env(safe-area-inset-top)) 20px calc(84px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; gap: 18px;
+    background: radial-gradient(circle at 90% 0%, #173670 0%, var(--bg) 60%);
+    border-bottom: 1px solid #142650;
+  }
+  .slide.center { justify-content: center; }
+  .slide.accent { background: linear-gradient(160deg, var(--accent-strong) 0%, #0D3A9E 100%); }
+
+  .eyebrow { font-size: 13px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: var(--accent); }
+  .accent .eyebrow { color: var(--on-accent); }
+  h1 { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 900; font-size: 30px; line-height: 1.1; }
+  h1.big { font-size: 38px; }
+  h1 span { color: var(--accent); }
+  .lead { font-size: 17px; line-height: 1.5; color: var(--muted); }
+  .accent .lead { color: var(--on-accent); }
+
+  .steps { list-style: none; display: flex; flex-direction: column; gap: 10px; counter-reset: s; }
+  .steps li { counter-increment: s; display: flex; gap: 12px; align-items: flex-start; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; font-size: 16px; line-height: 1.4; }
+  .steps li::before { content: counter(s); flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-strong); color: var(--on-accent); font-weight: 800; font-size: 14px; display: grid; place-items: center; }
+
+  .prompt { background: #0E1B3B; border: 1.5px solid var(--accent); border-radius: 16px; overflow: hidden; }
+  .prompt-label { padding: 12px 14px 0; font-size: 13px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); }
+  .prompt-text { position: relative; padding: 10px 14px; font-size: 14.5px; line-height: 1.5; white-space: pre-wrap; max-height: 150px; overflow: hidden; color: var(--text); }
+  .prompt-text::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 56px; background: linear-gradient(transparent, #0E1B3B); pointer-events: none; }
+  .prompt.open .prompt-text { max-height: none; }
+  .prompt.open .prompt-text::after { display: none; }
+  .prompt-actions { display: flex; gap: 8px; padding: 0 10px 10px; }
+
+  button, .btn { font: inherit; border: 0; cursor: pointer; border-radius: 12px; padding: 13px 14px; font-size: 15px; font-weight: 800; text-align: center; -webkit-tap-highlight-color: transparent; }
+  .btn-copy { flex: 1; background: var(--accent-strong); color: var(--on-accent); }
+  .btn-copy.done { background: #1F7A4D; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+  .btn-wide { width: 100%; }
+  .btn-light { background: var(--on-accent); color: #0D3A9E; }
+  .btn-outline { background: transparent; color: var(--text); border: 1.5px solid var(--accent); }
+  button:active { transform: scale(0.98); }
+
+  .tip { display: flex; gap: 10px; background: rgba(77, 163, 255, 0.1); border-left: 3px solid var(--accent); border-radius: 0 12px 12px 0; padding: 12px 14px; font-size: 15px; line-height: 1.45; color: var(--text); }
+
+  .compare { display: flex; flex-direction: column; gap: 10px; }
+  .bad { background: #1A2440; border-radius: 14px; padding: 14px; color: var(--muted); font-size: 16px; }
+  .good { background: var(--card); border: 1.5px solid var(--accent); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; line-height: 1.4; }
+  .good b { color: var(--accent); }
+  .tag { font-size: 12px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+
+  .swipe { margin-top: 28px; text-align: center; color: var(--muted); font-size: 14px; animation: bob 1.6s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-6px); } }
+
+  .dots { position: fixed; right: 6px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 6px; z-index: 5; }
+  .dots i { width: 5px; height: 5px; border-radius: 50%; background: #3A5486; transition: all .2s; }
+  .dots i.on { background: var(--accent); height: 16px; border-radius: 3px; }
+
+  .menu-btn { position: fixed; left: 12px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 6; background: rgba(18, 34, 74, 0.92); color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; font-size: 14px; backdrop-filter: blur(8px); }
+  .sheet { position: fixed; inset: 0; z-index: 10; background: rgba(5, 10, 22, 0.7); display: none; align-items: flex-end; }
+  .sheet.show { display: flex; }
+  .sheet-body { width: 100%; max-height: 80dvh; overflow-y: auto; background: #0E1B3B; border-radius: 20px 20px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 8px; }
+  .sheet-body button { text-align: left; background: var(--card); color: var(--text); border: 1px solid var(--line); }
+
+  .toast { position: fixed; left: 50%; bottom: calc(70px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--on-accent); color: #0A1428; font-weight: 800; font-size: 14px; padding: 10px 18px; border-radius: 999px; transition: all .25s; z-index: 20; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .error { padding: 40px 20px; font-size: 16px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="feed" id="feed"></div>
+<div class="dots" id="dots"></div>
+<button class="menu-btn" id="menuBtn">☰ Все практики</button>
+<div class="sheet" id="sheet"><div class="sheet-body" id="sheetBody"></div></div>
+<div class="toast" id="toast">Скопировано ✓</div>
+
+<script>
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    try { tg.setHeaderColor('#0A1428'); tg.setBackgroundColor('#0A1428'); } catch (e) {}
+  }
+
+  const feed = document.getElementById('feed');
+  const dots = document.getElementById('dots');
+  const toast = document.getElementById('toast');
+  const sheet = document.getElementById('sheet');
+  const sheetBody = document.getElementById('sheetBody');
+  let content;
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  function haptic(type) {
+    try { tg && tg.HapticFeedback.notificationOccurred(type); } catch (e) {}
+  }
+
+  function showToast(text) {
+    toast.textContent = text;
+    toast.classList.add('show');
+    clearTimeout(showToast.t);
+    showToast.t = setTimeout(() => toast.classList.remove('show'), 1600);
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e2) {}
+      ta.remove();
+      return ok;
+    }
+  }
+
+  function openUrl(url) {
+    if (tg && tg.openLink) tg.openLink(url); else window.open(url, '_blank');
+  }
+
+  function openBot(payload) {
+    if (!content.botUsername) return showToast('Вернитесь в чат с ботом');
+    const url = `https://t.me/${content.botUsername}?start=${payload}`;
+    if (tg && tg.openTelegramLink) { tg.openTelegramLink(url); tg.close(); } else window.open(url, '_blank');
+  }
+
+  function userName() {
+    const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+    return u && u.first_name ? u.first_name : '';
+  }
+
+  function promptHtml(p, key) {
+    return `
+      <div class="prompt" data-key="${key}">
+        <div class="prompt-label">${esc(p.label)}</div>
+        <div class="prompt-text">${esc(p.text)}</div>
+        <div class="prompt-actions">
+          <button class="btn-copy" data-copy="${key}">📋 Скопировать</button>
+          <button class="btn-ghost" data-toggle="${key}">Весь текст</button>
+        </div>
+      </div>`;
+  }
+
+  function render() {
+    const prompts = {};
+    const slides = [];
+    const name = userName();
+
+    slides.push({ id: 'intro', title: 'Старт', html: `
+      <section class="slide center" id="intro">
+        <p class="eyebrow">ИИ-практикум Костанай</p>
+        <h1 class="big">${name ? esc(name) + ', добро' : 'Добро'} пожаловать <span>на практикум</span></h1>
+        <p class="lead">Здесь все задания и промпты на сегодня. Листайте вверх, нажимайте «Скопировать» и вставляйте в ChatGPT.</p>
+        <button class="btn btn-light btn-wide" data-url="${esc(content.chatgptUrl)}">Открыть ChatGPT</button>
+        <p class="swipe">Листайте вверх ↑</p>
+      </section>` });
+
+    slides.push({ id: 'formula', title: 'Как говорить с ИИ', html: `
+      <section class="slide" id="formula">
+        <p class="eyebrow">Основа</p>
+        <h1>ИИ не тупой. <span>Он просто ничего о вас не знает</span></h1>
+        <div class="compare">
+          <div class="bad"><p class="tag">Так пишут 95%</p><p style="margin-top:6px">«Напиши пост для моей кофейни»</p></div>
+          <div class="good">
+            <p class="tag" style="color:var(--accent)">Так нужно</p>
+            <p><b>Роль:</b> кто ИИ (маркетолог с 10-летним опытом)</p>
+            <p><b>Контекст:</b> ваш бизнес, клиенты, цены</p>
+            <p><b>Задача:</b> что именно и зачем</p>
+            <p><b>Формат:</b> длина, структура, призыв</p>
+            <p><b>Ограничения:</b> чего не писать</p>
+          </div>
+        </div>
+        <div class="tip">💡 3 приёма сегодня: <b>интервью</b> (ИИ спрашивает вас), <b>цепочка</b> (шаг за шагом) и <b>критик</b> (ИИ разносит свой ответ).</div>
+      </section>` });
+
+    content.practices.forEach((pr) => {
+      const promptsHtml = pr.prompts.map((p, i) => {
+        const key = `${pr.id}-${i}`;
+        prompts[key] = p.text;
+        return promptHtml(p, key);
+      }).join('');
+      const steps = pr.steps.length ? `<ol class="steps">${pr.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : '';
+      slides.push({ id: pr.id, title: pr.button, html: `
+        <section class="slide" id="${pr.id}">
+          <p class="eyebrow">${esc(pr.eyebrow)}</p>
+          <h1>${esc(pr.title)}</h1>
+          <p class="lead">${esc(pr.intro)}</p>
+          ${steps}
+          ${promptsHtml}
+          ${pr.tip ? `<div class="tip">💡 <span>${esc(pr.tip)}</span></div>` : ''}
+          <button class="btn btn-outline btn-wide" data-url="${esc(content.chatgptUrl)}">Открыть ChatGPT</button>
+        </section>` });
+    });
+
+    slides.push({ id: 'final', title: 'Что дальше', html: `
+      <section class="slide accent center" id="final">
+        <p class="eyebrow">Что дальше</p>
+        <h1 class="big">А теперь представьте, что это работает само</h1>
+        <p class="lead">Посты выходят каждый день без вас. Бот отвечает клиентам в директ за 5 секунд — даже ночью. Клиенты дожимаются сами.</p>
+        <button class="btn btn-light btn-wide" data-bot="lead">Хочу так же в своём бизнесе</button>
+        <p class="lead" style="font-size:14px">Все промпты остаются здесь — возвращайтесь к ним в любое время через бота.</p>
+      </section>` });
+
+    feed.innerHTML = slides.map((s) => s.html).join('');
+    dots.innerHTML = slides.map(() => '<i></i>').join('');
+    sheetBody.innerHTML = slides.map((s) => `<button data-jump="${s.id}">${esc(s.title)}</button>`).join('');
+
+    feed.addEventListener('click', async (e) => {
+      const t = e.target.closest('button');
+      if (!t) return;
+      if (t.dataset.copy) {
+        const ok = await copyText(prompts[t.dataset.copy]);
+        if (ok) {
+          haptic('success');
+          showToast('Скопировано ✓ Вставьте в ChatGPT');
+          t.classList.add('done');
+          t.textContent = '✓ Скопировано';
+          setTimeout(() => { t.classList.remove('done'); t.textContent = '📋 Скопировать'; }, 2000);
+        } else {
+          haptic('error');
+          t.closest('.prompt').classList.add('open');
+          showToast('Выделите текст и скопируйте вручную');
+        }
+      } else if (t.dataset.toggle) {
+        const box = t.closest('.prompt');
+        box.classList.toggle('open');
+        t.textContent = box.classList.contains('open') ? 'Свернуть' : 'Весь текст';
+      } else if (t.dataset.url) {
+        openUrl(t.dataset.url);
+      } else if (t.dataset.bot) {
+        openBot(t.dataset.bot);
+      }
+    });
+
+    const dotEls = [...dots.children];
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (en.isIntersecting) {
+          const i = [...feed.children].indexOf(en.target);
+          dotEls.forEach((d, j) => d.classList.toggle('on', j === i));
+        }
+      });
+    }, { root: feed, threshold: 0.5 });
+    [...feed.children].forEach((s) => io.observe(s));
+  }
+
+  document.getElementById('menuBtn').addEventListener('click', () => sheet.classList.add('show'));
+  sheet.addEventListener('click', (e) => {
+    const t = e.target.closest('button');
+    if (t && t.dataset.jump) document.getElementById(t.dataset.jump).scrollIntoView({ behavior: 'smooth' });
+    sheet.classList.remove('show');
+  });
+
+  fetch('content.json', { cache: 'no-cache' })
+    .then((r) => r.json())
+    .then((data) => {
+      content = data;
+      render();
+      const start = new URLSearchParams(location.search).get('p');
+      if (start && document.getElementById(start)) document.getElementById(start).scrollIntoView();
+    })
+    .catch(() => {
+      feed.innerHTML = '<p class="error">Не удалось загрузить практикум. Проверьте интернет и откройте ещё раз. Все промпты также есть в чате с ботом — кнопки под сообщением.</p>';
+    });
+</script>
+</body>
+</html>
