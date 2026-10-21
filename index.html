@@ -141,6 +141,7 @@
   .event small { font-size: 11.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; opacity: .8; }
   .event b { display: block; font-size: 17px; margin-top: 4px; }
   .demo { font-size: 12px; color: var(--gold); font-weight: 700; margin-top: 8px; }
+  .ver { margin-top: 18px; text-align: center; font-size: 11.5px; color: var(--muted); opacity: .6; }
 
   /* нижнее меню */
   .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 8px 10px calc(8px + var(--safe-b)); background: rgba(10, 20, 40, .92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid var(--line); }
@@ -200,6 +201,7 @@
     <button class="link" id="lnChannel"><span class="e">📰</span><span>Канал практикума<small>Новости ИИ и инструменты каждый день</small></span><span class="go">›</span></button>
     <a class="link" id="lnWa" href="#" data-ext><span class="e">📞</span><span>Вопрос Валерию<small>WhatsApp · 8 747 169 93 50</small></span><span class="go">›</span></a>
     <p class="demo" id="demoNote" hidden>Демо-режим: приложение открыто не из Telegram, баллы тестовые.</p>
+    <p class="ver" id="ver"></p>
   </section>
 </div>
 
@@ -221,6 +223,8 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// номер версии приложения: меняйте вместе с ?v= в WEBAPP_URL (wrangler.toml), иначе Telegram покажет старую копию
+const APP_VERSION = 4;
 const tg = window.Telegram?.WebApp;
 const inTg = Boolean(tg?.initData);
 if (tg) {
@@ -509,6 +513,7 @@ document.addEventListener("click", (e) => {
   C = await fetch("content.json", { cache: "no-cache" }).then((r) => r.json());
   $("lnWa").href = `https://wa.me/${C.whatsapp}?text=${encodeURIComponent("Здравствуйте! У меня вопрос по ИИ-практикуму.")}`;
   $("lnChannel").onclick = () => { tap(); openTgLink(C.channelUrl); };
+  $("ver").textContent = `Версия ${APP_VERSION}${tg?.platform ? ` · ${tg.platform} · Telegram ${tg.version}` : ""}`;
   const u = tg?.initDataUnsafe?.user;
   if (u?.first_name) $("meName").textContent = u.first_name;
   done = new Set(await loadDone());
