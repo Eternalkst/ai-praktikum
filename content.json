@@ -1,6 +1,9 @@
 {
   "botUsername": "ai_praktikum_kostanay_bot",
-  "chatgptUrl": "https://chatgpt.com",
+  "chatgptUrl": "https://ai-praktikum-bot.prosolenko.workers.dev/gpt",
+  "apiUrl": "https://ai-praktikum-bot.prosolenko.workers.dev",
+  "channelUrl": "https://t.me/prakirun",
+  "whatsapp": "77471699350",
   "practices": [
     {
       "id": "p1",

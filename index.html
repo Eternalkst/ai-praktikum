@@ -2,296 +2,481 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>ИИ-практикум Костанай</title>
+<meta name="theme-color" content="#0A1428">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Manrope:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Manrope:wght@500;600;700;800&display=swap">
 <style>
   :root {
     --bg: #0A1428;
     --card: #12224A;
-    --line: #24407A;
+    --card-2: #182B58;
+    --line: rgba(120, 160, 230, 0.16);
+    --line-2: rgba(120, 160, 230, 0.3);
     --text: #EEF3FB;
     --muted: #A9BEDD;
     --accent: #4DA3FF;
     --accent-strong: #1656D6;
-    --on-accent: #F4F7FC;
+    --gold: #F3C14B;
+    --green: #3DDC97;
+    --safe-b: env(safe-area-inset-bottom, 0px);
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: var(--bg); color: var(--text); }
-  body { font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--text); font-family: 'Manrope', system-ui, sans-serif; font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+  .h { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 900; letter-spacing: -0.01em; line-height: 1.12; }
 
-  .feed { height: 100dvh; overflow-y: auto; scroll-snap-type: y proximity; overscroll-behavior: contain; }
-  .slide {
-    min-height: 100dvh; scroll-snap-align: start;
-    padding: calc(28px + env(safe-area-inset-top)) 20px calc(84px + env(safe-area-inset-bottom));
-    display: flex; flex-direction: column; gap: 18px;
-    background: radial-gradient(circle at 90% 0%, #173670 0%, var(--bg) 60%);
-    border-bottom: 1px solid #142650;
-  }
-  .slide.center { justify-content: center; }
-  .slide.accent { background: linear-gradient(160deg, var(--accent-strong) 0%, #0D3A9E 100%); }
+  .app { max-width: 520px; margin: 0 auto; min-height: 100%; padding: 16px 16px calc(96px + var(--safe-b)); }
+  .screen { display: none; animation: in .35s ease; }
+  .screen.on { display: block; }
+  @keyframes in { from { opacity: 0; transform: translateY(10px); } }
 
-  .eyebrow { font-size: 13px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: var(--accent); }
-  .accent .eyebrow { color: var(--on-accent); }
-  h1 { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 900; font-size: 30px; line-height: 1.1; }
-  h1.big { font-size: 38px; }
-  h1 span { color: var(--accent); }
-  .lead { font-size: 17px; line-height: 1.5; color: var(--muted); }
-  .accent .lead { color: var(--on-accent); }
+  /* верх */
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+  .hello small { display: block; color: var(--muted); font-size: 12px; font-weight: 700; }
+  .hello b { font-size: 17px; }
+  .pts { display: flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 999px; background: var(--gold); color: #1C1400; font-weight: 900; font-variant-numeric: tabular-nums; box-shadow: 0 6px 24px rgba(243, 193, 75, .3); transition: transform .2s; }
+  .pts.bump { transform: scale(1.15); }
 
-  .steps { list-style: none; display: flex; flex-direction: column; gap: 10px; counter-reset: s; }
-  .steps li { counter-increment: s; display: flex; gap: 12px; align-items: flex-start; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; font-size: 16px; line-height: 1.4; }
-  .steps li::before { content: counter(s); flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-strong); color: var(--on-accent); font-weight: 800; font-size: 14px; display: grid; place-items: center; }
+  .title { font-size: 25px; margin: 4px 0 6px; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+  .label { font-size: 11.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 22px 0 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .grow { flex: 1; min-width: 0; }
 
-  .prompt { background: #0E1B3B; border: 1.5px solid var(--accent); border-radius: 16px; overflow: hidden; }
-  .prompt-label { padding: 12px 14px 0; font-size: 13px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); }
-  .prompt-text { position: relative; padding: 10px 14px; font-size: 14.5px; line-height: 1.5; white-space: pre-wrap; max-height: 150px; overflow: hidden; color: var(--text); }
-  .prompt-text::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 56px; background: linear-gradient(transparent, #0E1B3B); pointer-events: none; }
+  /* прогресс */
+  .progress { position: relative; overflow: hidden; display: flex; align-items: center; gap: 16px; padding: 18px; border-radius: 22px; background: linear-gradient(135deg, rgba(77, 163, 255, .2), rgba(22, 86, 214, .25)); border: 1px solid rgba(77, 163, 255, .35); }
+  .ring { width: 70px; height: 70px; flex: none; position: relative; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring b { position: absolute; inset: 0; display: grid; place-items: center; font-family: 'Montserrat'; font-weight: 900; font-size: 17px; }
+  .progress b.t { display: block; font-size: 17px; margin-bottom: 2px; }
+  .progress span { color: var(--muted); font-size: 13.5px; }
+
+  /* карточки практик */
+  .pr { display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; padding: 14px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); margin-bottom: 8px; transition: transform .1s; }
+  .pr:active { transform: scale(.98); }
+  .pr .n { width: 44px; height: 44px; flex: none; border-radius: 14px; display: grid; place-items: center; font-family: 'Montserrat'; font-weight: 900; font-size: 17px; background: var(--card-2); color: var(--accent); }
+  .pr b { display: block; font-size: 15px; }
+  .pr span { font-size: 12.5px; color: var(--muted); }
+  .pr .go { color: var(--muted); font-size: 20px; }
+  .pr.done .n { background: rgba(61, 220, 151, .16); color: var(--green); }
+  .pr.next { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 10px 30px rgba(77, 163, 255, .15); }
+  .pr.next .go { color: var(--accent); }
+  .pr.sub { margin-left: 22px; width: calc(100% - 22px); padding: 11px 14px; }
+  .pr.sub .n { width: 34px; height: 34px; font-size: 13px; border-radius: 11px; }
+  .pr.bonus .n { background: rgba(243, 193, 75, .15); color: var(--gold); }
+
+  /* экран практики */
+  .page { position: fixed; inset: 0; z-index: 50; background: var(--bg); overflow-y: auto; transform: translateX(100%); transition: transform .32s cubic-bezier(.2, .9, .3, 1); }
+  .page.on { transform: none; }
+  .page-in { max-width: 520px; margin: 0 auto; padding: 14px 16px calc(110px + var(--safe-b)); }
+  .back { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px 8px 8px; margin-bottom: 10px; border-radius: 12px; color: var(--muted); font-weight: 800; }
+  .eyebrow { font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+  .intro { color: var(--muted); font-size: 15.5px; margin: 10px 0 18px; }
+  .steps { list-style: none; display: flex; flex-direction: column; gap: 8px; counter-reset: s; }
+  .steps li { counter-increment: s; display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); font-size: 15px; }
+  .steps li::before { content: counter(s); flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-strong); color: #fff; font-weight: 800; font-size: 13px; display: grid; place-items: center; }
+  .prompt { margin-top: 12px; border-radius: 18px; background: #0E1B3B; border: 1.5px solid rgba(77, 163, 255, .55); overflow: hidden; }
+  .prompt-label { padding: 13px 14px 0; font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+  .prompt-text { position: relative; padding: 10px 14px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; max-height: 132px; overflow: hidden; }
+  .prompt-text::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 52px; background: linear-gradient(transparent, #0E1B3B); pointer-events: none; }
   .prompt.open .prompt-text { max-height: none; }
   .prompt.open .prompt-text::after { display: none; }
   .prompt-actions { display: flex; gap: 8px; padding: 0 10px 10px; }
+  .tip { display: flex; gap: 10px; margin-top: 16px; padding: 13px 14px; border-radius: 0 14px 14px 0; background: rgba(77, 163, 255, .1); border-left: 3px solid var(--accent); font-size: 14.5px; }
 
-  button, .btn { font: inherit; border: 0; cursor: pointer; border-radius: 12px; padding: 13px 14px; font-size: 15px; font-weight: 800; text-align: center; -webkit-tap-highlight-color: transparent; }
-  .btn-copy { flex: 1; background: var(--accent-strong); color: var(--on-accent); }
-  .btn-copy.done { background: #1F7A4D; }
-  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
-  .btn-wide { width: 100%; }
-  .btn-light { background: var(--on-accent); color: #0D3A9E; }
-  .btn-outline { background: transparent; color: var(--text); border: 1.5px solid var(--accent); }
-  button:active { transform: scale(0.98); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 16px; border-radius: 14px; font-weight: 800; font-size: 15px; transition: transform .1s, background .2s; white-space: nowrap; text-decoration: none; color: var(--text); }
+  .btn:active { transform: scale(.97); }
+  .btn-blue { background: var(--accent-strong); color: #fff; }
+  .btn-gold { background: var(--gold); color: #1C1400; }
+  .btn-green { background: #1F7A4D; color: #fff; }
+  .btn-soft { background: var(--card-2); border: 1px solid var(--line-2); }
+  .btn-wide { width: 100%; padding: 16px; font-size: 16px; }
+  .btn-copy { flex: 1; }
+  .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 55; padding: 10px 16px calc(12px + var(--safe-b)); background: rgba(10, 20, 40, .92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); display: none; }
+  .dock.on { display: block; }
+  .dock-in { max-width: 520px; margin: 0 auto; display: flex; gap: 8px; }
+  .dock .btn { flex: 1; padding: 15px 10px; }
 
-  .tip { display: flex; gap: 10px; background: rgba(77, 163, 255, 0.1); border-left: 3px solid var(--accent); border-radius: 0 12px 12px 0; padding: 12px 14px; font-size: 15px; line-height: 1.45; color: var(--text); }
+  /* баллы */
+  .wallet { position: relative; overflow: hidden; padding: 20px; border-radius: 24px; background: radial-gradient(circle at 85% 0%, rgba(243, 193, 75, .35), transparent 60%), linear-gradient(135deg, #1B2C5C, #12224A); border: 1px solid rgba(243, 193, 75, .4); }
+  .wallet small { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .wallet .big { font-family: 'Montserrat'; font-weight: 900; font-size: 44px; color: var(--gold); line-height: 1.05; margin: 4px 0 6px; font-variant-numeric: tabular-nums; text-shadow: 0 0 30px rgba(243, 193, 75, .35); }
+  .wallet p { color: var(--muted); font-size: 13.5px; }
+  .price { display: flex; flex-direction: column; gap: 8px; }
+  .price .line { display: flex; justify-content: space-between; gap: 10px; font-size: 14.5px; }
+  .price .line span { color: var(--muted); }
+  .price .line s { color: var(--muted); }
+  .price .final { padding-top: 10px; border-top: 1px solid var(--line); font-weight: 900; font-size: 17px; }
+  .price .final b { color: var(--gold); font-family: 'Montserrat'; font-size: 22px; }
+  .todo { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); margin-bottom: 6px; font-size: 14px; font-weight: 700; }
+  .todo b { color: var(--gold); white-space: nowrap; }
+  .log { display: flex; justify-content: space-between; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .log span small { display: block; color: var(--muted); font-size: 12px; }
+  .log b { color: var(--gold); white-space: nowrap; }
+  .invite { padding: 18px; border-radius: 22px; background: linear-gradient(135deg, rgba(61, 220, 151, .14), rgba(77, 163, 255, .12)); border: 1px solid rgba(61, 220, 151, .35); }
+  .invite p { color: var(--muted); font-size: 14px; margin: 6px 0 12px; }
+  .invite .stat { display: flex; gap: 8px; margin-top: 12px; }
+  .invite .stat div { flex: 1; padding: 10px; border-radius: 14px; background: rgba(0, 0, 0, .2); text-align: center; font-size: 12px; color: var(--muted); font-weight: 700; }
+  .invite .stat b { display: block; font-family: 'Montserrat'; font-size: 22px; color: var(--text); }
+  .skel { height: 120px; border-radius: 22px; background: linear-gradient(90deg, var(--card) 25%, var(--card-2) 50%, var(--card) 75%); background-size: 200% 100%; animation: sk 1.2s infinite; }
+  @keyframes sk { to { background-position: -200% 0; } }
 
-  .compare { display: flex; flex-direction: column; gap: 10px; }
-  .bad { background: #1A2440; border-radius: 14px; padding: 14px; color: var(--muted); font-size: 16px; }
-  .good { background: var(--card); border: 1.5px solid var(--accent); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; line-height: 1.4; }
-  .good b { color: var(--accent); }
-  .tag { font-size: 12px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+  /* ещё */
+  .link { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 14px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); margin-bottom: 8px; color: var(--text); font-weight: 700; text-decoration: none; }
+  .link .e { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; background: var(--card-2); flex: none; }
+  .link small { display: block; color: var(--muted); font-size: 12.5px; font-weight: 600; }
+  .link .go { margin-left: auto; color: var(--muted); }
+  .event { padding: 16px; border-radius: 20px; background: linear-gradient(135deg, var(--accent-strong), #0D3A9E); }
+  .event small { font-size: 11.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; opacity: .8; }
+  .event b { display: block; font-size: 17px; margin-top: 4px; }
+  .demo { font-size: 12px; color: var(--gold); font-weight: 700; margin-top: 8px; }
 
-  .swipe { margin-top: 28px; text-align: center; color: var(--muted); font-size: 14px; animation: bob 1.6s ease-in-out infinite; }
-  @keyframes bob { 50% { transform: translateY(-6px); } }
+  /* нижнее меню */
+  .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 8px 10px calc(8px + var(--safe-b)); background: rgba(10, 20, 40, .92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid var(--line); }
+  .tabs-in { max-width: 520px; margin: 0 auto; display: flex; }
+  .tabb { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; color: var(--muted); font-size: 11px; font-weight: 800; position: relative; }
+  .tabb .e { font-size: 22px; filter: grayscale(1); opacity: .65; transition: all .2s; }
+  .tabb.on { color: var(--text); }
+  .tabb.on .e { filter: none; opacity: 1; transform: translateY(-2px); }
+  .tabb.on::after { content: ""; position: absolute; top: -9px; width: 26px; height: 3px; border-radius: 3px; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
 
-  .dots { position: fixed; right: 6px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 6px; z-index: 5; }
-  .dots i { width: 5px; height: 5px; border-radius: 50%; background: #3A5486; transition: all .2s; }
-  .dots i.on { background: var(--accent); height: 16px; border-radius: 3px; }
-
-  .menu-btn { position: fixed; left: 12px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 6; background: rgba(18, 34, 74, 0.92); color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; font-size: 14px; backdrop-filter: blur(8px); }
-  .sheet { position: fixed; inset: 0; z-index: 10; background: rgba(5, 10, 22, 0.7); display: none; align-items: flex-end; }
-  .sheet.show { display: flex; }
-  .sheet-body { width: 100%; max-height: 80dvh; overflow-y: auto; background: #0E1B3B; border-radius: 20px 20px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 8px; }
-  .sheet-body button { text-align: left; background: var(--card); color: var(--text); border: 1px solid var(--line); }
-
-  .toast { position: fixed; left: 50%; bottom: calc(70px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--on-accent); color: #0A1428; font-weight: 800; font-size: 14px; padding: 10px 18px; border-radius: 999px; transition: all .25s; z-index: 20; pointer-events: none; }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  .error { padding: 40px 20px; font-size: 16px; line-height: 1.5; }
+  /* всплывашки */
+  .pop { position: fixed; left: 50%; top: 40%; z-index: 90; transform: translate(-50%, -50%) scale(.6); opacity: 0; pointer-events: none; text-align: center; transition: all .45s cubic-bezier(.2, 1.4, .4, 1); }
+  .pop.on { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  .pop b { display: block; font-family: 'Montserrat'; font-weight: 900; font-size: 50px; color: var(--gold); text-shadow: 0 0 40px rgba(243, 193, 75, .7); }
+  .pop span { display: inline-block; margin-top: 6px; padding: 8px 14px; border-radius: 999px; background: rgba(18, 34, 74, .95); border: 1px solid var(--line-2); font-weight: 800; font-size: 14px; }
+  canvas#fx { position: fixed; inset: 0; z-index: 89; pointer-events: none; }
+  .toast { position: fixed; left: 16px; right: 16px; top: 12px; z-index: 95; max-width: 488px; margin: 0 auto; padding: 13px 16px; border-radius: 16px; background: var(--card-2); border: 1px solid var(--line-2); font-weight: 700; font-size: 14px; transform: translateY(-150%); transition: transform .35s cubic-bezier(.2, .9, .3, 1.2); }
+  .toast.on { transform: none; }
 </style>
 </head>
 <body>
-<div class="feed" id="feed"></div>
-<div class="dots" id="dots"></div>
-<button class="menu-btn" id="menuBtn">☰ Все практики</button>
-<div class="sheet" id="sheet"><div class="sheet-body" id="sheetBody"></div></div>
-<div class="toast" id="toast">Скопировано ✓</div>
+<div class="app">
+
+  <!-- ПРАКТИКИ -->
+  <section class="screen on" id="s-practices">
+    <div class="bar">
+      <div class="hello"><small>Привет,</small><b id="meName">участник</b></div>
+      <button class="pts" id="ptsPill" data-tab="points">💎 <span id="ptsVal">…</span></button>
+    </div>
+    <div class="progress">
+      <div class="ring"><svg width="70" height="70"><circle cx="35" cy="35" r="29" stroke="rgba(255,255,255,.1)" stroke-width="7" fill="none"/><circle id="ringArc" cx="35" cy="35" r="29" stroke="#4DA3FF" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="182.2" stroke-dashoffset="182.2" style="transition:stroke-dashoffset .8s"/></svg><b id="ringTxt">0/7</b></div>
+      <div><b class="t" id="progTitle">7 практик</b><span id="progHint">Делайте по порядку: каждая следующая опирается на предыдущую</span></div>
+    </div>
+    <div class="label">Практики</div>
+    <div id="list"></div>
+  </section>
+
+  <!-- БАЛЛЫ -->
+  <section class="screen" id="s-points">
+    <h1 class="h title">Мои баллы</h1>
+    <p class="sub">1 балл = 1 ₸ скидки на обучение «ИИ-автоматизация бизнеса»</p>
+    <div id="pointsBody"><div class="skel"></div></div>
+  </section>
+
+  <!-- ЕЩЁ -->
+  <section class="screen" id="s-more">
+    <h1 class="h title">Полезное</h1>
+    <p class="sub">ChatGPT, разбор бизнеса и связь с Валерием</p>
+    <div id="eventBox"></div>
+    <div class="label">ChatGPT</div>
+    <button class="link" data-gpt><span class="e">💬</span><span>Открыть ChatGPT<small>Откроется приложение на телефоне</small></span><span class="go">›</span></button>
+    <a class="link" href="https://apps.apple.com/app/chatgpt/id6448311069" data-ext><span class="e">🍏</span><span>Установить на iPhone<small>App Store</small></span><span class="go">›</span></a>
+    <a class="link" href="https://play.google.com/store/apps/details?id=com.openai.chatgpt" data-ext><span class="e">🤖</span><span>Установить на Android<small>Google Play</small></span><span class="go">›</span></a>
+    <div class="label">Дальше</div>
+    <button class="link" data-bot="diag"><span class="e">🔍</span><span>Бесплатный ИИ-разбор бизнеса<small>5 вопросов — персональный план · +1 000 баллов</small></span><span class="go">›</span></button>
+    <button class="link" data-bot="lead"><span class="e">🎓</span><span>Обучение «ИИ-автоматизация бизнеса»<small>Группа до 5 человек · 8 занятий</small></span><span class="go">›</span></button>
+    <button class="link" id="lnChannel"><span class="e">📰</span><span>Канал практикума<small>Новости ИИ и инструменты каждый день</small></span><span class="go">›</span></button>
+    <a class="link" id="lnWa" href="#" data-ext><span class="e">📞</span><span>Вопрос Валерию<small>WhatsApp · 8 747 169 93 50</small></span><span class="go">›</span></a>
+    <p class="demo" id="demoNote" hidden>Демо-режим: приложение открыто не из Telegram, баллы тестовые.</p>
+  </section>
+</div>
+
+<!-- экран практики -->
+<div class="page" id="page"><div class="page-in" id="pageBody"></div></div>
+<div class="dock" id="dock"><div class="dock-in">
+  <button class="btn btn-soft" data-gpt>💬 ChatGPT</button>
+  <button class="btn btn-blue" id="doneBtn">✓ Готово</button>
+</div></div>
+
+<nav class="tabs"><div class="tabs-in">
+  <button class="tabb on" data-tab="practices"><span class="e">🧠</span>Практики</button>
+  <button class="tabb" data-tab="points"><span class="e">💎</span>Баллы</button>
+  <button class="tabb" data-tab="more"><span class="e">✨</span>Ещё</button>
+</div></nav>
+
+<canvas id="fx"></canvas>
+<div class="pop" id="pop"><b id="popVal"></b><span id="popTxt"></span></div>
+<div class="toast" id="toast"></div>
 
 <script>
-  const tg = window.Telegram && window.Telegram.WebApp;
-  if (tg) {
-    tg.ready();
-    tg.expand();
-    try { tg.setHeaderColor('#0A1428'); tg.setBackgroundColor('#0A1428'); } catch (e) {}
-  }
+const tg = window.Telegram?.WebApp;
+const inTg = Boolean(tg?.initData);
+if (tg) {
+  tg.ready();
+  tg.expand();
+  try { tg.setHeaderColor("#0A1428"); tg.setBackgroundColor("#0A1428"); tg.setBottomBarColor?.("#0A1428"); } catch {}
+}
 
-  const feed = document.getElementById('feed');
-  const dots = document.getElementById('dots');
-  const toast = document.getElementById('toast');
-  const sheet = document.getElementById('sheet');
-  const sheetBody = document.getElementById('sheetBody');
-  let content;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const fmt = (n) => Number(n).toLocaleString("ru-RU").replace(/[, ]/g, " ");
+const MAIN = ["p1", "p2", "p3", "p4", "p5", "p6", "p7"];
 
-  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let C = null;        // content.json
+let done = new Set(); // выполненные практики
+let ME = null;       // баллы и приглашения из бота
+let cur = null;      // открытая практика
 
-  function haptic(type) {
-    try { tg && tg.HapticFeedback.notificationOccurred(type); } catch (e) {}
-  }
-
-  function showToast(text) {
-    toast.textContent = text;
-    toast.classList.add('show');
-    clearTimeout(showToast.t);
-    showToast.t = setTimeout(() => toast.classList.remove('show'), 1600);
-  }
-
-  async function copyText(text) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch (e) {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.setAttribute('readonly', '');
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      ta.setSelectionRange(0, text.length);
-      let ok = false;
-      try { ok = document.execCommand('copy'); } catch (e2) {}
-      ta.remove();
-      return ok;
-    }
-  }
-
-  function openUrl(url) {
-    if (tg && tg.openLink) tg.openLink(url); else window.open(url, '_blank');
-  }
-
-  function openBot(payload) {
-    if (!content.botUsername) return showToast('Вернитесь в чат с ботом');
-    const url = `https://t.me/${content.botUsername}?start=${payload}`;
-    if (tg && tg.openTelegramLink) { tg.openTelegramLink(url); tg.close(); } else window.open(url, '_blank');
-  }
-
-  function userName() {
-    const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
-    return u && u.first_name ? u.first_name : '';
-  }
-
-  function promptHtml(p, key) {
-    return `
-      <div class="prompt" data-key="${key}">
-        <div class="prompt-label">${esc(p.label)}</div>
-        <div class="prompt-text">${esc(p.text)}</div>
-        <div class="prompt-actions">
-          <button class="btn-copy" data-copy="${key}">📋 Скопировать</button>
-          <button class="btn-ghost" data-toggle="${key}">Весь текст</button>
-        </div>
-      </div>`;
-  }
-
-  function render() {
-    const prompts = {};
-    const slides = [];
-    const name = userName();
-
-    slides.push({ id: 'intro', title: 'Старт', html: `
-      <section class="slide center" id="intro">
-        <p class="eyebrow">ИИ-практикум Костанай</p>
-        <h1 class="big">${name ? esc(name) + ', добро' : 'Добро'} пожаловать <span>на практикум</span></h1>
-        <p class="lead">Здесь все задания и промпты на сегодня. Листайте вверх, нажимайте «Скопировать» и вставляйте в ChatGPT.</p>
-        <button class="btn btn-light btn-wide" data-url="${esc(content.chatgptUrl)}">Открыть ChatGPT</button>
-        <p class="swipe">Листайте вверх ↑</p>
-      </section>` });
-
-    slides.push({ id: 'formula', title: 'Как говорить с ИИ', html: `
-      <section class="slide" id="formula">
-        <p class="eyebrow">Основа</p>
-        <h1>ИИ не тупой. <span>Он просто ничего о вас не знает</span></h1>
-        <div class="compare">
-          <div class="bad"><p class="tag">Так пишут 95%</p><p style="margin-top:6px">«Напиши пост для моей кофейни»</p></div>
-          <div class="good">
-            <p class="tag" style="color:var(--accent)">Так нужно</p>
-            <p><b>Роль:</b> кто ИИ (маркетолог с 10-летним опытом)</p>
-            <p><b>Контекст:</b> ваш бизнес, клиенты, цены</p>
-            <p><b>Задача:</b> что именно и зачем</p>
-            <p><b>Формат:</b> длина, структура, призыв</p>
-            <p><b>Ограничения:</b> чего не писать</p>
-          </div>
-        </div>
-        <div class="tip">💡 3 приёма сегодня: <b>интервью</b> (ИИ спрашивает вас), <b>цепочка</b> (шаг за шагом) и <b>критик</b> (ИИ разносит свой ответ).</div>
-      </section>` });
-
-    content.practices.forEach((pr) => {
-      const promptsHtml = pr.prompts.map((p, i) => {
-        const key = `${pr.id}-${i}`;
-        prompts[key] = p.text;
-        return promptHtml(p, key);
-      }).join('');
-      const steps = pr.steps.length ? `<ol class="steps">${pr.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : '';
-      slides.push({ id: pr.id, title: pr.button, html: `
-        <section class="slide" id="${pr.id}">
-          <p class="eyebrow">${esc(pr.eyebrow)}</p>
-          <h1>${esc(pr.title)}</h1>
-          <p class="lead">${esc(pr.intro)}</p>
-          ${steps}
-          ${promptsHtml}
-          ${pr.tip ? `<div class="tip">💡 <span>${esc(pr.tip)}</span></div>` : ''}
-          <button class="btn btn-outline btn-wide" data-url="${esc(content.chatgptUrl)}">Открыть ChatGPT</button>
-        </section>` });
-    });
-
-    slides.push({ id: 'final', title: 'Что дальше', html: `
-      <section class="slide accent center" id="final">
-        <p class="eyebrow">Что дальше</p>
-        <h1 class="big">А теперь представьте, что это работает само</h1>
-        <p class="lead">Посты выходят каждый день без вас. Бот отвечает клиентам в директ за 5 секунд — даже ночью. Клиенты дожимаются сами.</p>
-        <button class="btn btn-light btn-wide" data-bot="lead">Хочу так же в своём бизнесе</button>
-        <p class="lead" style="font-size:14px">Все промпты остаются здесь — возвращайтесь к ним в любое время через бота.</p>
-      </section>` });
-
-    feed.innerHTML = slides.map((s) => s.html).join('');
-    dots.innerHTML = slides.map(() => '<i></i>').join('');
-    sheetBody.innerHTML = slides.map((s) => `<button data-jump="${s.id}">${esc(s.title)}</button>`).join('');
-
-    feed.addEventListener('click', async (e) => {
-      const t = e.target.closest('button');
-      if (!t) return;
-      if (t.dataset.copy) {
-        const ok = await copyText(prompts[t.dataset.copy]);
-        if (ok) {
-          haptic('success');
-          showToast('Скопировано ✓ Вставьте в ChatGPT');
-          t.classList.add('done');
-          t.textContent = '✓ Скопировано';
-          setTimeout(() => { t.classList.remove('done'); t.textContent = '📋 Скопировать'; }, 2000);
-        } else {
-          haptic('error');
-          t.closest('.prompt').classList.add('open');
-          showToast('Выделите текст и скопируйте вручную');
-        }
-      } else if (t.dataset.toggle) {
-        const box = t.closest('.prompt');
-        box.classList.toggle('open');
-        t.textContent = box.classList.contains('open') ? 'Свернуть' : 'Весь текст';
-      } else if (t.dataset.url) {
-        openUrl(t.dataset.url);
-      } else if (t.dataset.bot) {
-        openBot(t.dataset.bot);
-      }
-    });
-
-    const dotEls = [...dots.children];
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((en) => {
-        if (en.isIntersecting) {
-          const i = [...feed.children].indexOf(en.target);
-          dotEls.forEach((d, j) => d.classList.toggle('on', j === i));
-        }
-      });
-    }, { root: feed, threshold: 0.5 });
-    [...feed.children].forEach((s) => io.observe(s));
-  }
-
-  document.getElementById('menuBtn').addEventListener('click', () => sheet.classList.add('show'));
-  sheet.addEventListener('click', (e) => {
-    const t = e.target.closest('button');
-    if (t && t.dataset.jump) document.getElementById(t.dataset.jump).scrollIntoView({ behavior: 'smooth' });
-    sheet.classList.remove('show');
+// ---------- хранение прогресса: облако Telegram, а без него — браузер ----------
+const KEY = "praktikum_done";
+function loadDone() {
+  return new Promise((resolve) => {
+    const local = () => { try { resolve(JSON.parse(localStorage.getItem(KEY)) || []); } catch { resolve([]); } };
+    if (inTg && tg.CloudStorage && tg.isVersionAtLeast?.("6.9")) tg.CloudStorage.getItem(KEY, (err, v) => { if (err || !v) return local(); try { resolve(JSON.parse(v)); } catch { local(); } });
+    else local();
   });
+}
+function saveDone() {
+  const v = JSON.stringify([...done]);
+  try { localStorage.setItem(KEY, v); } catch {}
+  try { if (inTg && tg.CloudStorage && tg.isVersionAtLeast?.("6.9")) tg.CloudStorage.setItem(KEY, v); } catch {}
+}
 
-  fetch('content.json', { cache: 'no-cache' })
-    .then((r) => r.json())
-    .then((data) => {
-      content = data;
-      render();
-      const start = new URLSearchParams(location.search).get('p');
-      if (start && document.getElementById(start)) document.getElementById(start).scrollIntoView();
-    })
-    .catch(() => {
-      feed.innerHTML = '<p class="error">Не удалось загрузить практикум. Проверьте интернет и откройте ещё раз. Все промпты также есть в чате с ботом — кнопки под сообщением.</p>';
-    });
+// ---------- мелочи ----------
+function haptic(type = "success") { try { tg?.HapticFeedback?.notificationOccurred(type); } catch {} }
+function tap() { try { tg?.HapticFeedback?.impactOccurred("light"); } catch {} }
+function toast(text) { const t = $("toast"); t.textContent = text; t.classList.add("on"); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("on"), 2400); }
+function openExt(url) { if (tg?.openLink) tg.openLink(url); else window.open(url, "_blank"); }
+function openTgLink(url) { if (tg?.openTelegramLink) tg.openTelegramLink(url); else window.open(url, "_blank"); }
+function openBot(payload) {
+  const url = `https://t.me/${C.botUsername}?start=${payload}`;
+  if (tg?.openTelegramLink) { tg.openTelegramLink(url); setTimeout(() => tg.close(), 300); } else window.open(url, "_blank");
+}
+// ChatGPT: на Android — через нашу страницу, она открывает приложение (или Google Play);
+// на iPhone ссылка chatgpt.com сама открывается в приложении, если оно установлено
+function openGPT() {
+  tap();
+  const p = tg?.platform || "";
+  if (p === "android" || /Android/i.test(navigator.userAgent)) openExt(C.chatgptUrl);
+  else openExt("https://chatgpt.com/");
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+  document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+  let ok = false; try { ok = document.execCommand("copy"); } catch {}
+  ta.remove(); return ok;
+}
+
+// ---------- конфетти и всплывашка ----------
+const fx = $("fx"), g = fx.getContext("2d");
+let parts = [];
+function confetti(n = 90) {
+  fx.width = innerWidth; fx.height = innerHeight;
+  const colors = ["#4DA3FF", "#F3C14B", "#3DDC97", "#FFFFFF", "#9B6BFF"];
+  for (let i = 0; i < n; i++) parts.push({ x: innerWidth / 2, y: innerHeight * .42, vx: (Math.random() - .5) * 12, vy: -Math.random() * 13 - 4, s: 4 + Math.random() * 5, r: Math.random() * 6, c: colors[i % colors.length], life: 90 + Math.random() * 40 });
+  if (parts.length === n) requestAnimationFrame(frame);
+}
+function frame() {
+  g.clearRect(0, 0, fx.width, fx.height);
+  parts = parts.filter((p) => p.life-- > 0);
+  for (const p of parts) { p.vy += .35; p.x += p.vx; p.y += p.vy; p.r += .15; g.save(); g.translate(p.x, p.y); g.rotate(p.r); g.fillStyle = p.c; g.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); g.restore(); }
+  if (parts.length) requestAnimationFrame(frame); else g.clearRect(0, 0, fx.width, fx.height);
+}
+function celebrate(big, small) {
+  $("popVal").textContent = big; $("popTxt").textContent = small;
+  $("pop").classList.add("on"); haptic(); confetti();
+  setTimeout(() => $("pop").classList.remove("on"), 1600);
+}
+
+// ---------- вкладки ----------
+function showTab(name) {
+  document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === "s-" + name));
+  document.querySelectorAll(".tabb").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
+  scrollTo(0, 0);
+}
+
+// ---------- список практик ----------
+const byId = (id) => C.practices.find((p) => p.id === id);
+const numOf = (p) => (MAIN.includes(p.id) ? String(MAIN.indexOf(p.id) + 1) : p.id === "employee" ? "1+" : "🎁");
+const timeOf = (p) => (p.eyebrow.split("·")[1] || "").trim();
+function renderList() {
+  const n = MAIN.filter((id) => done.has(id)).length;
+  $("ringTxt").textContent = `${n}/7`;
+  $("ringArc").style.strokeDashoffset = 182.2 * (1 - n / 7);
+  $("progTitle").textContent = n === 7 ? "Все 7 практик пройдены 🎉" : n ? `Пройдено ${n} из 7` : "7 практик";
+  $("progHint").textContent = n === 7 ? "Промпты остаются здесь — возвращайтесь в любое время" : "Делайте по порядку: каждая следующая опирается на предыдущую";
+  const next = C.practices.find((p) => p.id !== "life" && !done.has(p.id));
+  $("list").innerHTML = C.practices.map((p) => {
+    const cls = ["pr", done.has(p.id) && "done", next?.id === p.id && "next", p.id === "employee" && "sub", p.id === "life" && "bonus"].filter(Boolean).join(" ");
+    const title = p.id === "life" ? "Бонус: ИИ для жизни" : p.title;
+    const meta = p.id === "life" ? "Промпты для дома, здоровья и отдыха" : p.id === "employee" ? "Продолжение практики 1" : `${timeOf(p)}${p.prompts.length > 1 ? ` · ${p.prompts.length} промпта` : ""}`;
+    return `<button class="${cls}" data-open="${p.id}"><span class="n">${done.has(p.id) ? "✓" : numOf(p)}</span><span class="grow"><b>${esc(title)}</b><span>${esc(meta)}</span></span><span class="go">›</span></button>`;
+  }).join("");
+}
+
+// ---------- экран практики ----------
+function openPractice(id) {
+  const p = byId(id); if (!p) return;
+  cur = id; tap();
+  $("pageBody").innerHTML = `
+    <button class="back" id="backBtn">‹ Все практики</button>
+    <div class="eyebrow">${esc(p.eyebrow)}</div>
+    <h1 class="h title">${esc(p.title)}</h1>
+    <p class="intro">${esc(p.intro)}</p>
+    ${p.steps.length ? `<ol class="steps">${p.steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}
+    ${p.prompts.map((pr, i) => `
+      <div class="prompt" id="pr${i}">
+        <div class="prompt-label">${esc(pr.label)}</div>
+        <div class="prompt-text">${esc(pr.text)}</div>
+        <div class="prompt-actions">
+          <button class="btn btn-blue btn-copy" data-copy="${i}">📋 Скопировать</button>
+          <button class="btn btn-soft" data-more="${i}">Весь текст</button>
+        </div>
+      </div>`).join("")}
+    ${p.tip ? `<div class="tip"><span>💡</span><span>${esc(p.tip)}</span></div>` : ""}`;
+  $("doneBtn").textContent = done.has(id) ? "Дальше ›" : "✓ Готово";
+  $("doneBtn").className = "btn " + (done.has(id) ? "btn-soft" : "btn-blue");
+  $("page").scrollTop = 0;
+  $("page").classList.add("on"); $("dock").classList.add("on");
+  if (tg?.BackButton) { tg.BackButton.show(); }
+}
+function closePractice() {
+  $("page").classList.remove("on"); $("dock").classList.remove("on");
+  cur = null; renderList();
+  try { tg?.BackButton?.hide(); } catch {}
+}
+function nextAfter(id) {
+  const i = C.practices.findIndex((p) => p.id === id);
+  return C.practices.slice(i + 1).find((p) => !done.has(p.id)) || null;
+}
+function finishCurrent() {
+  const id = cur;
+  const wasDone = done.has(id);
+  if (!wasDone) {
+    done.add(id); saveDone();
+    const n = MAIN.filter((x) => done.has(x)).length;
+    if (MAIN.includes(id) && n === 7) celebrate("7/7", "Все практики пройдены!");
+    else celebrate("✓", MAIN.includes(id) ? `Практика ${numOf(byId(id))} готова` : "Готово!");
+  }
+  const nx = nextAfter(id);
+  setTimeout(() => (nx ? openPractice(nx.id) : closePractice()), wasDone ? 0 : 900);
+}
+
+$("pageBody").addEventListener("click", async (e) => {
+  if (e.target.closest("#backBtn")) return closePractice();
+  const c = e.target.closest("[data-copy]");
+  if (c) {
+    const pr = byId(cur).prompts[+c.dataset.copy];
+    if (await copyText(pr.text)) {
+      haptic(); c.textContent = "✓ Скопировано"; c.classList.replace("btn-blue", "btn-green");
+      toast("Промпт скопирован — откройте ChatGPT и вставьте");
+      setTimeout(() => { c.textContent = "📋 Скопировать"; c.classList.replace("btn-green", "btn-blue"); }, 2200);
+    } else { haptic("error"); toast("Не получилось скопировать — нажмите «Весь текст» и выделите вручную"); }
+    return;
+  }
+  const m = e.target.closest("[data-more]");
+  if (m) { const box = $("pr" + m.dataset.more); box.classList.toggle("open"); m.textContent = box.classList.contains("open") ? "Свернуть" : "Весь текст"; }
+});
+$("doneBtn").addEventListener("click", finishCurrent);
+tg?.BackButton?.onClick(closePractice);
+
+// ---------- баллы ----------
+async function loadMe() {
+  if (!inTg) {
+    ME = { demo: true, name: null, points: 3000, log: [{ label: "заполнили анкету", amount: 1000 }, { label: "подписались на канал", amount: 1000 }, { label: "записались на практикум", amount: 1000 }], todo: [{ label: "пройти ИИ-разбор бизнеса", amount: 1000 }, { label: "оставить отзыв после встречи", amount: 2000 }], refBonus: 5000, course: { base: 250000, price: 150000, discount: 3000, final: 147000, max: 30000 }, refLink: `https://t.me/${C.botUsername}?start=ref_demo`, invited: 0, invitedPaid: 0, nextEvent: "Суббота, 24 октября, 11:00 · A-LIFE, Аль-Фараби 128" };
+    return renderMe();
+  }
+  try {
+    const r = await fetch(C.apiUrl + "/api/me", { method: "POST", headers: { "content-type": "text/plain" }, body: tg.initData });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Ошибка");
+    ME = data;
+  } catch (e) {
+    ME = { error: e.message };
+  }
+  renderMe();
+}
+function renderMe() {
+  if (ME.error) {
+    $("ptsVal").textContent = "—";
+    $("pointsBody").innerHTML = `<div class="card">Не удалось загрузить баллы. Проверьте интернет и откройте приложение ещё раз.<br><br><button class="btn btn-soft btn-wide" id="retry">Повторить</button></div>`;
+    $("retry").onclick = () => { $("pointsBody").innerHTML = '<div class="skel"></div>'; loadMe(); };
+    return;
+  }
+  if (ME.name) $("meName").textContent = ME.name.split(" ")[0];
+  $("ptsVal").textContent = fmt(ME.points);
+  $("demoNote").hidden = !ME.demo;
+  // новые баллы с прошлого раза — показать праздник
+  try {
+    const last = Number(localStorage.getItem("praktikum_pts"));
+    if (!ME.demo && localStorage.getItem("praktikum_pts") !== null && ME.points > last) setTimeout(() => celebrate("+" + fmt(ME.points - last), "новые баллы 💎"), 600);
+    if (!ME.demo) localStorage.setItem("praktikum_pts", String(ME.points));
+  } catch {}
+  const c = ME.course;
+  const share = `https://t.me/share/url?url=${encodeURIComponent(ME.refLink)}&text=${encodeURIComponent("ИИ-практикум в Костанае: за 90 минут настраиваешь ИИ-помощника под свой бизнес. Записывайся по ссылке 👇")}`;
+  $("pointsBody").innerHTML = `
+    <div class="wallet">
+      <small>На счету</small>
+      <div class="big">${fmt(ME.points)}</div>
+      <p>Можно списать до ${fmt(c.max)} баллов на обучение</p>
+    </div>
+
+    <div class="label">Обучение для вас</div>
+    <div class="card price">
+      <div class="line"><span>Обычная цена</span><s>${fmt(c.base)} ₸</s></div>
+      <div class="line"><span>Цена для участников</span><b>${fmt(c.price)} ₸</b></div>
+      <div class="line"><span>Ваши баллы</span><b style="color:var(--gold)">−${fmt(c.discount)} ₸</b></div>
+      <div class="line final"><span>К оплате</span><b>${fmt(c.final)} ₸</b></div>
+      <button class="btn btn-gold btn-wide" data-bot="lead" style="margin-top:6px">🎓 Хочу на обучение</button>
+    </div>
+
+    <div class="label">Пригласите друга · +${fmt(ME.refBonus)}</div>
+    <div class="invite">
+      <b>За каждого друга, который придёт по вашей ссылке и оплатит участие — ${fmt(ME.refBonus)} баллов</b>
+      <p>Ваша ссылка:<br><span style="color:var(--text);word-break:break-all">${esc(ME.refLink)}</span></p>
+      <div class="row">
+        <button class="btn btn-blue grow" id="shareRef">↗ Отправить другу</button>
+        <button class="btn btn-soft" id="copyRef">📋</button>
+      </div>
+      <div class="stat"><div><b>${ME.invited}</b>пришли</div><div><b>${ME.invitedPaid}</b>оплатили</div></div>
+    </div>
+
+    ${ME.todo.length ? `<div class="label">Как получить ещё</div>${ME.todo.map((t) => `<div class="todo"><span>${esc(t.label[0].toUpperCase() + t.label.slice(1))}</span><b>+${fmt(t.amount)}</b></div>`).join("")}` : ""}
+
+    ${ME.log.length ? `<div class="label">История</div><div class="card" style="padding:4px 16px">${ME.log.map((l) => `<div class="log"><span>${esc(l.label[0].toUpperCase() + l.label.slice(1))}${l.at ? `<small>${new Date(l.at).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}</small>` : ""}</span><b>+${fmt(l.amount)}</b></div>`).join("")}</div>` : ""}`;
+  $("shareRef").onclick = () => { tap(); openTgLink(share); };
+  $("copyRef").onclick = async () => { if (await copyText(ME.refLink)) { haptic(); toast("Ссылка скопирована"); } };
+  $("eventBox").innerHTML = ME.nextEvent ? `<div class="event"><small>Следующая встреча</small><b>${esc(ME.nextEvent)}</b></div>` : "";
+}
+
+// ---------- общие клики ----------
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-tab]"); if (t) { tap(); return showTab(t.dataset.tab); }
+  const o = e.target.closest("[data-open]"); if (o) return openPractice(o.dataset.open);
+  if (e.target.closest("[data-gpt]")) return openGPT();
+  const b = e.target.closest("[data-bot]"); if (b) { tap(); return openBot(b.dataset.bot); }
+  const x = e.target.closest("a[data-ext]"); if (x) { e.preventDefault(); tap(); return openExt(x.href); }
+});
+
+// ---------- старт ----------
+(async () => {
+  C = await fetch("content.json", { cache: "no-cache" }).then((r) => r.json());
+  $("lnWa").href = `https://wa.me/${C.whatsapp}?text=${encodeURIComponent("Здравствуйте! У меня вопрос по ИИ-практикуму.")}`;
+  $("lnChannel").onclick = () => { tap(); openTgLink(C.channelUrl); };
+  const u = tg?.initDataUnsafe?.user;
+  if (u?.first_name) $("meName").textContent = u.first_name;
+  done = new Set(await loadDone());
+  renderList();
+  loadMe();
+})();
 </script>
 </body>
 </html>
