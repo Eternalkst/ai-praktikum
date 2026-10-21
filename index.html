@@ -264,16 +264,30 @@ function openBot(payload) {
   const url = `https://t.me/${C.botUsername}?start=${payload}`;
   if (tg?.openTelegramLink) { tg.openTelegramLink(url); setTimeout(() => tg.close(), 300); } else window.open(url, "_blank");
 }
-// ChatGPT в приложении на телефоне. Встроенный браузер Telegram приложение не запускает,
-// поэтому просим Telegram открыть ссылку во внешнем браузере (try_browser, Telegram 7.6+):
-// iPhone — chatgpt.com через Safari, iOS передаёт её установленному приложению;
-// Android — наша страница /gpt через Chrome, она открывает приложение (или Google Play)
+// ChatGPT в приложении на телефоне.
+// Android: отдаём Telegram ссылку intent:// на пакет ChatGPT через window.open — Telegram передаёт её системе,
+// и та сразу запускает приложение (без браузера). Если через секунду мы всё ещё на экране —
+// приложение не открылось, тогда открываем страницу /gpt с большой кнопкой.
+// iPhone: ссылка chatgpt.com уходит в браузер из настроек Telegram (часто Opera или встроенный) и открывает сайт.
+// Надёжно — страница ChatGPT в App Store: её всегда открывает сам App Store, а там у установленного приложения кнопка «Открыть».
+const GPT_INTENT = "intent://chatgpt.com/#Intent;scheme=https;package=com.openai.chatgpt;S.browser_fallback_url=" + encodeURIComponent("https://play.google.com/store/apps/details?id=com.openai.chatgpt") + ";end";
+const GPT_APPSTORE = "https://apps.apple.com/app/chatgpt/id6448311069";
 function openGPT() {
   tap();
-  const android = tg?.platform === "android" || /Android/i.test(navigator.userAgent);
-  const url = android ? C.chatgptUrl : "https://chatgpt.com/";
-  if (tg?.openLink) tg.openLink(url, { try_browser: android ? "chrome" : "safari" });
-  else window.open(url, "_blank");
+  const p = tg?.platform || "";
+  const android = p.startsWith("android") || /Android/i.test(navigator.userAgent);
+  const ios = p === "ios" || /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (!tg?.openLink) return window.open("https://chatgpt.com/", "_blank");
+  if (ios) { toast("Откроется App Store — нажмите там «Открыть»"); return setTimeout(() => tg.openLink(GPT_APPSTORE), 700); }
+  if (!android) return tg.openLink("https://chatgpt.com/");
+  let left = false;
+  const onHide = () => { if (document.hidden) left = true; };
+  document.addEventListener("visibilitychange", onHide);
+  try { window.open(GPT_INTENT, "_blank"); } catch {}
+  setTimeout(() => {
+    document.removeEventListener("visibilitychange", onHide);
+    if (!left && !document.hidden) tg.openLink(C.chatgptUrl);
+  }, 1200);
 }
 async function copyText(text) {
   try { await navigator.clipboard.writeText(text); return true; } catch {}
@@ -418,7 +432,7 @@ async function loadMe() {
     return renderMe();
   }
   try {
-    const r = await fetch(C.apiUrl + "/api/me", { method: "POST", headers: { "content-type": "text/plain" }, body: tg.initData });
+    const r = await fetch(`${C.apiUrl}/api/me?p=${encodeURIComponent(tg.platform || "")}&v=${encodeURIComponent(tg.version || "")}`, { method: "POST", headers: { "content-type": "text/plain" }, body: tg.initData });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || "Ошибка");
     ME = data;
