@@ -69,6 +69,12 @@
   .pr.sub { margin-left: 22px; width: calc(100% - 22px); padding: 11px 14px; }
   .pr.sub .n { width: 34px; height: 34px; font-size: 13px; border-radius: 11px; }
   .pr.bonus .n { background: rgba(243, 193, 75, .15); color: var(--gold); }
+  .pr.locked { opacity: .45; }
+  .lock { padding: 20px; margin-bottom: 14px; border-radius: 22px; background: linear-gradient(135deg, rgba(243, 193, 75, .14), rgba(22, 86, 214, .2)); border: 1px solid rgba(243, 193, 75, .35); text-align: center; }
+  .lock-ic { font-size: 34px; margin-bottom: 6px; }
+  .lock b { display: block; font-size: 17px; }
+  .lock p { color: var(--muted); font-size: 14px; margin: 8px 0 14px; }
+  .lock p b { display: inline; font-size: 14px; color: var(--text); }
 
   /* экран практики */
   .page { position: fixed; inset: 0; z-index: 50; background: var(--bg); overflow-y: auto; transform: translateX(100%); transition: transform .32s cubic-bezier(.2, .9, .3, 1); }
@@ -164,7 +170,7 @@
       <div class="hello"><small>Привет,</small><b id="meName">участник</b></div>
       <button class="pts" id="ptsPill" data-tab="points">💎 <span id="ptsVal">…</span></button>
     </div>
-    <div class="progress">
+    <div class="progress" id="progBox">
       <div class="ring"><svg width="70" height="70"><circle cx="35" cy="35" r="29" stroke="rgba(255,255,255,.1)" stroke-width="7" fill="none"/><circle id="ringArc" cx="35" cy="35" r="29" stroke="#4DA3FF" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="182.2" stroke-dashoffset="182.2" style="transition:stroke-dashoffset .8s"/></svg><b id="ringTxt">0/7</b></div>
       <div><b class="t" id="progTitle">7 практик</b><span id="progHint">Делайте по порядку: каждая следующая опирается на предыдущую</span></div>
     </div>
@@ -258,13 +264,16 @@ function openBot(payload) {
   const url = `https://t.me/${C.botUsername}?start=${payload}`;
   if (tg?.openTelegramLink) { tg.openTelegramLink(url); setTimeout(() => tg.close(), 300); } else window.open(url, "_blank");
 }
-// ChatGPT: на Android — через нашу страницу, она открывает приложение (или Google Play);
-// на iPhone ссылка chatgpt.com сама открывается в приложении, если оно установлено
+// ChatGPT в приложении на телефоне. Встроенный браузер Telegram приложение не запускает,
+// поэтому просим Telegram открыть ссылку во внешнем браузере (try_browser, Telegram 7.6+):
+// iPhone — chatgpt.com через Safari, iOS передаёт её установленному приложению;
+// Android — наша страница /gpt через Chrome, она открывает приложение (или Google Play)
 function openGPT() {
   tap();
-  const p = tg?.platform || "";
-  if (p === "android" || /Android/i.test(navigator.userAgent)) openExt(C.chatgptUrl);
-  else openExt("https://chatgpt.com/");
+  const android = tg?.platform === "android" || /Android/i.test(navigator.userAgent);
+  const url = android ? C.chatgptUrl : "https://chatgpt.com/";
+  if (tg?.openLink) tg.openLink(url, { try_browser: android ? "chrome" : "safari" });
+  else window.open(url, "_blank");
 }
 async function copyText(text) {
   try { await navigator.clipboard.writeText(text); return true; } catch {}
@@ -305,6 +314,8 @@ function showTab(name) {
 
 // ---------- список практик ----------
 const byId = (id) => C.practices.find((p) => p.id === id);
+// доступ решает бот; вне Telegram (демо) и пока данные грузятся — не закрываем
+const locked = () => Boolean(ME && !ME.demo && !ME.error && ME.access === false);
 const numOf = (p) => (MAIN.includes(p.id) ? String(MAIN.indexOf(p.id) + 1) : p.id === "employee" ? "1+" : "🎁");
 const timeOf = (p) => (p.eyebrow.split("·")[1] || "").trim();
 function renderList() {
@@ -313,6 +324,18 @@ function renderList() {
   $("ringArc").style.strokeDashoffset = 182.2 * (1 - n / 7);
   $("progTitle").textContent = n === 7 ? "Все 7 практик пройдены 🎉" : n ? `Пройдено ${n} из 7` : "7 практик";
   $("progHint").textContent = n === 7 ? "Промпты остаются здесь — возвращайтесь в любое время" : "Делайте по порядку: каждая следующая опирается на предыдущую";
+  $("progBox").style.display = locked() ? "none" : "";
+  if (locked()) {
+    const paid = ME.status === "paid";
+    $("list").innerHTML = `<div class="lock">
+      <div class="lock-ic">🔒</div>
+      <b>${paid ? "Практики откроются в начале практикума" : "Практики открываются участникам практикума"}</b>
+      <p>${ME.nextEvent ? `Ближайшая встреча: <b>${esc(ME.nextEvent)}</b>.<br>` : ""}${paid ? "Вы записаны — в момент начала встречи всё откроется само, бот пришлёт уведомление." : "Запишитесь и оплатите участие в боте — на встрече все 7 практик откроются здесь и останутся у вас навсегда."}</p>
+      ${paid ? "" : `<button class="btn btn-gold btn-wide" data-bot="app">Записаться на практикум</button>`}
+    </div>
+    ${C.practices.filter((p) => p.id !== "employee").map((p) => `<div class="pr locked"><span class="n">${numOf(p)}</span><span class="grow"><b>${esc(p.id === "life" ? "Бонус: ИИ для жизни" : p.title)}</b><span>🔒 откроется на практикуме</span></span></div>`).join("")}`;
+    return;
+  }
   const next = C.practices.find((p) => p.id !== "life" && !done.has(p.id));
   $("list").innerHTML = C.practices.map((p) => {
     const cls = ["pr", done.has(p.id) && "done", next?.id === p.id && "next", p.id === "employee" && "sub", p.id === "life" && "bonus"].filter(Boolean).join(" ");
@@ -324,7 +347,7 @@ function renderList() {
 
 // ---------- экран практики ----------
 function openPractice(id) {
-  const p = byId(id); if (!p) return;
+  const p = byId(id); if (!p || locked()) return;
   cur = id; tap();
   $("pageBody").innerHTML = `
     <button class="back" id="backBtn">‹ Все практики</button>
@@ -455,6 +478,7 @@ function renderMe() {
   $("shareRef").onclick = () => { tap(); openTgLink(share); };
   $("copyRef").onclick = async () => { if (await copyText(ME.refLink)) { haptic(); toast("Ссылка скопирована"); } };
   $("eventBox").innerHTML = ME.nextEvent ? `<div class="event"><small>Следующая встреча</small><b>${esc(ME.nextEvent)}</b></div>` : "";
+  renderList();
 }
 
 // ---------- общие клики ----------
