@@ -224,7 +224,7 @@
 
 <script>
 // номер версии приложения: меняйте вместе с ?v= в WEBAPP_URL (wrangler.toml), иначе Telegram покажет старую копию
-const APP_VERSION = 4;
+const APP_VERSION = 5;
 const tg = window.Telegram?.WebApp;
 const inTg = Boolean(tg?.initData);
 if (tg) {
@@ -348,7 +348,7 @@ function renderList() {
     $("list").innerHTML = `<div class="lock">
       <div class="lock-ic">🔒</div>
       <b>${paid ? "Практики откроются в начале практикума" : "Практики открываются участникам практикума"}</b>
-      <p>${ME.nextEvent ? `Ближайшая встреча: <b>${esc(ME.nextEvent)}</b>.<br>` : ""}${paid ? "Вы записаны — в момент начала встречи всё откроется само, бот пришлёт уведомление." : "Запишитесь и оплатите участие в боте — на встрече все 7 практик откроются здесь и останутся у вас навсегда."}</p>
+      <p>${ME.nextEvent ? `Ближайшая встреча: <b>${esc(ME.nextEvent)}</b>.<br>` : ""}${paid ? "Вы записаны — в момент начала встречи всё откроется само, бот пришлёт уведомление." : "Офлайн в Костанае — 5 000 ₸, онлайн — 2 000 ₸: все 7 практик откроются здесь сразу после оплаты и останутся у вас навсегда. Первая практика — бесплатно, в боте."}</p>
       ${paid ? "" : `<button class="btn btn-gold btn-wide" data-bot="app">Записаться на практикум</button>`}
     </div>
     ${C.practices.filter((p) => p.id !== "employee").map((p) => `<div class="pr locked"><span class="n">${numOf(p)}</span><span class="grow"><b>${esc(p.id === "life" ? "Бонус: ИИ для жизни" : p.title)}</b><span>🔒 откроется на практикуме</span></span></div>`).join("")}`;
