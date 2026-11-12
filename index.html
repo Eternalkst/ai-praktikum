@@ -224,7 +224,7 @@
 
 <script>
 // номер версии приложения: меняйте вместе с ?v= в WEBAPP_URL (wrangler.toml), иначе Telegram покажет старую копию
-const APP_VERSION = 6;
+const APP_VERSION = 7;
 const tg = window.Telegram?.WebApp;
 const inTg = Boolean(tg?.initData);
 if (tg) {
@@ -351,14 +351,14 @@ function renderList() {
       <p>${ME.nextEvent ? `Ближайшая встреча: <b>${esc(ME.nextEvent)}</b>.<br>` : ""}${paid ? "Вы записаны — в момент начала встречи всё откроется само, бот пришлёт уведомление." : "Офлайн в Костанае — 5 000 ₸, онлайн — 3 000 ₸: все 7 практик откроются здесь сразу после оплаты и останутся у вас навсегда. Первая практика — бесплатно, в боте."}</p>
       ${paid ? "" : `<button class="btn btn-gold btn-wide" data-bot="app">Записаться на практикум</button>`}
     </div>
-    ${C.practices.filter((p) => p.id !== "employee").map((p) => `<div class="pr locked"><span class="n">${numOf(p)}</span><span class="grow"><b>${esc(p.id === "life" ? "Бонус: ИИ для жизни" : p.title)}</b><span>🔒 откроется на практикуме</span></span></div>`).join("")}`;
+    ${C.practices.filter((p) => p.id !== "employee").map((p) => `<div class="pr locked"><span class="n">${numOf(p)}</span><span class="grow"><b>${esc(p.id === "life" ? "Бонус: ИИ для жизни" : p.id === "song" ? "Бонус: песня за 5 минут" : p.title)}</b><span>🔒 откроется на практикуме</span></span></div>`).join("")}`;
     return;
   }
-  const next = C.practices.find((p) => p.id !== "life" && !done.has(p.id));
+  const next = C.practices.find((p) => MAIN.includes(p.id) && !done.has(p.id));
   $("list").innerHTML = C.practices.map((p) => {
-    const cls = ["pr", done.has(p.id) && "done", next?.id === p.id && "next", p.id === "employee" && "sub", p.id === "life" && "bonus"].filter(Boolean).join(" ");
-    const title = p.id === "life" ? "Бонус: ИИ для жизни" : p.title;
-    const meta = p.id === "life" ? "Промпты для дома, здоровья и отдыха" : p.id === "employee" ? "Продолжение практики 1" : `${timeOf(p)}${p.prompts.length > 1 ? ` · ${p.prompts.length} промпта` : ""}`;
+    const cls = ["pr", done.has(p.id) && "done", next?.id === p.id && "next", p.id === "employee" && "sub", (p.id === "life" || p.id === "song") && "bonus"].filter(Boolean).join(" ");
+    const title = p.id === "life" ? "Бонус: ИИ для жизни" : p.id === "song" ? "Бонус: песня за 5 минут" : p.title;
+    const meta = p.id === "life" ? "Промпты для дома, здоровья и отдыха" : p.id === "song" ? "Своя песня в Suno: маме, другу, бизнесу" : p.id === "employee" ? "Продолжение практики 1" : `${timeOf(p)}${p.prompts.length > 1 ? ` · ${p.prompts.length} промпта` : ""}`;
     return `<button class="${cls}" data-open="${p.id}"><span class="n">${done.has(p.id) ? "✓" : numOf(p)}</span><span class="grow"><b>${esc(title)}</b><span>${esc(meta)}</span></span><span class="go">›</span></button>`;
   }).join("");
 }
@@ -372,7 +372,7 @@ function openPractice(id) {
     <div class="eyebrow">${esc(p.eyebrow)}</div>
     <h1 class="h title">${esc(p.title)}</h1>
     <p class="intro">${esc(p.intro)}</p>
-    <button class="btn btn-blue" data-video="${esc(p.id)}" style="width:100%;margin:0 0 14px">🎬 Смотреть видео</button>
+    ${p.botButton ? `<button class="btn btn-gold" data-bot="music" style="width:100%;margin:0 0 14px">${esc(p.botButton)}</button>` : `<button class="btn btn-blue" data-video="${esc(p.id)}" style="width:100%;margin:0 0 14px">🎬 Смотреть видео</button>`}
     ${p.steps.length ? `<ol class="steps">${p.steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}
     ${p.prompts.map((pr, i) => `
       <div class="prompt" id="pr${i}">
